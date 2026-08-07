@@ -32,14 +32,15 @@ const materialSchema = new mongoose.Schema(
       ],
       required: [true, "Unit type is required"],
     },
-    // "refill" requests add to an existing approved material instead of
-    // creating a brand new inventory line once approved
+    // "refill" requests add to an existing approved material and "reduce"
+    // requests subtract from one, instead of creating a brand new inventory
+    // line once approved
     requestType: {
       type: String,
-      enum: ["new", "refill"],
+      enum: ["new", "refill", "reduce"],
       default: "new",
     },
-    // If this is a refill request, points at the existing approved material
+    // If this is a refill/reduce request, points at the existing approved material
     refillTarget: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Material",

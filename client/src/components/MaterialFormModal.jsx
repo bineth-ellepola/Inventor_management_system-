@@ -5,10 +5,12 @@ const CATEGORIES = ["Chemical", "Packing Material", "Label"];
 const UNITS = ["kg", "g", "cm", "bundle", "cubes", "litres", "rolls", "boxes", "pieces"];
 
 /**
- * mode: "add" | "refill" | "edit"
- * initialData: material being edited or refilled
+ * mode: "add" | "refill" | "reduce" | "edit"
+ * initialData: material being edited, refilled, or reduced
  */
 const MaterialFormModal = ({ mode, initialData, onClose, onSubmit, submitting }) => {
+  const isLinked = mode === "refill" || mode === "reduce";
+
   const [form, setForm] = useState({
     name: initialData?.name || "",
     quantity: initialData?.quantity || "",
@@ -20,17 +22,18 @@ const MaterialFormModal = ({ mode, initialData, onClose, onSubmit, submitting })
   useEffect(() => {
     if (initialData) {
       setForm({
-        name: mode === "refill" ? initialData.name : initialData.name,
-        quantity: mode === "refill" ? "" : initialData.quantity,
+        name: initialData.name,
+        quantity: isLinked ? "" : initialData.quantity,
         category: initialData.category,
         unitType: initialData.unitType,
       });
     }
-  }, [initialData, mode]);
+  }, [initialData, isLinked]);
 
   const titles = {
     add: "Add Raw Material",
     refill: "Refill Material",
+    reduce: "Reduce Material",
     edit: "Edit Pending Request",
   };
 
@@ -44,6 +47,10 @@ const MaterialFormModal = ({ mode, initialData, onClose, onSubmit, submitting })
     if (!form.quantity || Number(form.quantity) <= 0)
       return setError("Quantity must be greater than zero");
 
+    if (mode === "reduce" && Number(form.quantity) > initialData.quantity) {
+      return setError(`Cannot reduce more than the current stock (${initialData.quantity} ${initialData.unitType})`);
+    }
+
     const payload = {
       name: form.name.trim(),
       quantity: Number(form.quantity),
@@ -51,8 +58,8 @@ const MaterialFormModal = ({ mode, initialData, onClose, onSubmit, submitting })
       unitType: form.unitType,
     };
 
-    if (mode === "refill") {
-      payload.requestType = "refill";
+    if (isLinked) {
+      payload.requestType = mode;
       payload.refillTarget = initialData._id;
     }
 
@@ -86,7 +93,7 @@ const MaterialFormModal = ({ mode, initialData, onClose, onSubmit, submitting })
               type="text"
               value={form.name}
               onChange={(e) => handleChange("name", e.target.value)}
-              disabled={mode === "refill"}
+              disabled={isLinked}
               className="w-full px-3 py-2 text-sm border border-graphite-900/15 rounded-md focus:border-amber outline-none disabled:bg-paper-dim"
               placeholder="e.g. Acetone"
             />
@@ -95,17 +102,23 @@ const MaterialFormModal = ({ mode, initialData, onClose, onSubmit, submitting })
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-mono uppercase tracking-widest text-graphite-600 mb-1.5">
-                Quantity
+                {mode === "reduce" ? "Quantity to Reduce" : "Quantity"}
               </label>
               <input
                 type="number"
                 min="1"
+                max={mode === "reduce" ? initialData.quantity : undefined}
                 step="any"
                 value={form.quantity}
                 onChange={(e) => handleChange("quantity", e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-graphite-900/15 rounded-md focus:border-amber outline-none font-mono"
                 placeholder="0"
               />
+              {mode === "reduce" && (
+                <p className="mt-1 text-xs text-graphite-600 font-mono">
+                  Current stock: {initialData.quantity} {initialData.unitType}
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-xs font-mono uppercase tracking-widest text-graphite-600 mb-1.5">
@@ -114,7 +127,7 @@ const MaterialFormModal = ({ mode, initialData, onClose, onSubmit, submitting })
               <select
                 value={form.unitType}
                 onChange={(e) => handleChange("unitType", e.target.value)}
-                disabled={mode === "refill"}
+                disabled={isLinked}
                 className="w-full px-3 py-2 text-sm border border-graphite-900/15 rounded-md focus:border-amber outline-none bg-white disabled:bg-paper-dim"
               >
                 {UNITS.map((u) => (
@@ -133,7 +146,7 @@ const MaterialFormModal = ({ mode, initialData, onClose, onSubmit, submitting })
             <select
               value={form.category}
               onChange={(e) => handleChange("category", e.target.value)}
-              disabled={mode === "refill"}
+              disabled={isLinked}
               className="w-full px-3 py-2 text-sm border border-graphite-900/15 rounded-md focus:border-amber outline-none bg-white disabled:bg-paper-dim"
             >
               {CATEGORIES.map((c) => (

@@ -98,6 +98,31 @@ const approveRequest = async (req, res) => {
       return res.json({ message: "Refill approved and merged into inventory", target, request });
     }
 
+    // Reduce requests subtract their quantity from the existing approved material
+    if (request.requestType === "reduce" && request.refillTarget) {
+      const target = await Material.findById(request.refillTarget);
+
+      if (!target || target.status !== "Approved") {
+        return res.status(400).json({ message: "Target material was not found or is not an approved item" });
+      }
+
+      if (request.quantity > target.quantity) {
+        return res.status(400).json({
+          message: `Cannot reduce more than the current stock (${target.quantity} ${target.unitType})`,
+        });
+      }
+
+      target.quantity -= request.quantity;
+      await target.save();
+
+      request.status = "Approved";
+      request.approvedBy = req.user._id;
+      request.approvedAt = new Date();
+      await request.save();
+
+      return res.json({ message: "Reduction approved and deducted from inventory", target, request });
+    }
+
     request.status = "Approved";
     request.approvedBy = req.user._id;
     request.approvedAt = new Date();

@@ -35,7 +35,9 @@ const paginate = (req) => {
 // @access  Private
 const getInventory = async (req, res) => {
   try {
-    const filter = buildFilter(req, { status: "Approved" });
+    // Refill/reduce requests are history entries that adjust an existing
+    // material's quantity — only "new" requests represent standalone stock lines
+    const filter = buildFilter(req, { status: "Approved", requestType: "new" });
     const { page, limit, skip } = paginate(req);
 
     const sortField = req.query.sortBy || "name";
@@ -126,17 +128,30 @@ const createMaterial = async (req, res) => {
       return res.status(400).json({ message: "Quantity must be greater than zero" });
     }
 
-    if (requestType === "refill" && !refillTarget) {
-      return res.status(400).json({ message: "refillTarget is required for refill requests" });
+    if ((requestType === "refill" || requestType === "reduce") && !refillTarget) {
+      return res.status(400).json({ message: "refillTarget is required for refill and reduce requests" });
     }
+
+    if (requestType === "reduce") {
+      const target = await Material.findById(refillTarget);
+      if (!target || target.status !== "Approved") {
+        return res.status(400).json({ message: "Target material was not found or is not an approved item" });
+      }
+      if (quantity > target.quantity) {
+        return res.status(400).json({ message: `Cannot reduce more than the current stock (${target.quantity} ${target.unitType})` });
+      }
+    }
+
+    const validTypes = ["refill", "reduce"];
+    const finalRequestType = validTypes.includes(requestType) ? requestType : "new";
 
     const material = await Material.create({
       name,
       quantity,
       category,
       unitType,
-      requestType: requestType === "refill" ? "refill" : "new",
-      refillTarget: requestType === "refill" ? refillTarget : null,
+      requestType: finalRequestType,
+      refillTarget: finalRequestType !== "new" ? refillTarget : null,
       status: "Pending",
       createdBy: req.user._id,
     });
@@ -219,10 +234,10 @@ const getStoreKeeperStats = async (req, res) => {
       pendingRequests,
       approvedRequests,
     ] = await Promise.all([
-      Material.countDocuments({ status: "Approved" }),
-      Material.countDocuments({ status: "Approved", category: "Chemical" }),
-      Material.countDocuments({ status: "Approved", category: "Packing Material" }),
-      Material.countDocuments({ status: "Approved", category: "Label" }),
+      Material.countDocuments({ status: "Approved", requestType: "new" }),
+      Material.countDocuments({ status: "Approved", requestType: "new", category: "Chemical" }),
+      Material.countDocuments({ status: "Approved", requestType: "new", category: "Packing Material" }),
+      Material.countDocuments({ status: "Approved", requestType: "new", category: "Label" }),
       Material.countDocuments({ createdBy: req.user._id, status: "Pending" }),
       Material.countDocuments({ createdBy: req.user._id, status: "Approved" }),
     ]);
@@ -252,7 +267,7 @@ const getManagerStats = async (req, res) => {
       await Promise.all([
         Material.countDocuments({ status: "Pending" }),
         Material.countDocuments({ status: "Approved", approvedAt: { $gte: startOfDay } }),
-        Material.countDocuments({ status: "Approved" }),
+        Material.countDocuments({ status: "Approved", requestType: "new" }),
         Material.countDocuments({ status: "Rejected" }),
       ]);
 

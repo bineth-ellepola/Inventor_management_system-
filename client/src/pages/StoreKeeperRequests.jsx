@@ -79,7 +79,8 @@ const StoreKeeperRequests = () => {
     {
       key: "requestType",
       label: "Type",
-      render: (row) => (row.requestType === "refill" ? "Refill" : "New"),
+      render: (row) =>
+        row.requestType === "refill" ? "Refill" : row.requestType === "reduce" ? "Reduce" : "New",
     },
   ];
 

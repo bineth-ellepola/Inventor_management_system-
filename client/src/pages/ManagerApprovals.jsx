@@ -35,7 +35,11 @@ const ManagerApprovals = () => {
     setActingId(row._id);
     try {
       await approveRequest(row._id);
-      toast.success(`"${row.name}" approved and added to inventory`);
+      toast.success(
+        row.requestType === "reduce"
+          ? `"${row.name}" approved and deducted from inventory`
+          : `"${row.name}" approved and added to inventory`
+      );
       fetchData();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to approve request");
@@ -73,7 +77,8 @@ const ManagerApprovals = () => {
     {
       key: "requestType",
       label: "Type",
-      render: (row) => (row.requestType === "refill" ? "Refill" : "New"),
+      render: (row) =>
+        row.requestType === "refill" ? "Refill" : row.requestType === "reduce" ? "Reduce" : "New",
     },
     {
       key: "createdBy",

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
-import { LuRefreshCcw } from "react-icons/lu";
+import { LuRefreshCcw, LuMinus } from "react-icons/lu";
 import DashboardLayout from "../layouts/DashboardLayout";
 import MaterialTable from "../components/MaterialTable";
 import MaterialFormModal from "../components/MaterialFormModal";
@@ -14,7 +14,7 @@ const InventoryPage = () => {
   const [category, setCategory] = useState("");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [refillTarget, setRefillTarget] = useState(null);
+  const [actionModal, setActionModal] = useState(null); // { mode: "refill" | "reduce", row }
   const [submitting, setSubmitting] = useState(false);
 
   const fetchData = useCallback(() => {
@@ -28,14 +28,21 @@ const InventoryPage = () => {
     fetchData();
   }, [fetchData]);
 
-  const handleRefillSubmit = async (payload) => {
+  const handleActionSubmit = async (payload) => {
     setSubmitting(true);
     try {
       await createMaterial(payload);
-      toast.success("Refill request submitted for approval");
-      setRefillTarget(null);
+      toast.success(
+        actionModal.mode === "reduce"
+          ? "Reduction request submitted for approval"
+          : "Refill request submitted for approval"
+      );
+      setActionModal(null);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to submit refill request");
+      toast.error(
+        err.response?.data?.message ||
+          `Failed to submit ${actionModal.mode === "reduce" ? "reduction" : "refill"} request`
+      );
     } finally {
       setSubmitting(false);
     }
@@ -84,23 +91,31 @@ const InventoryPage = () => {
         renderActions={
           user?.role === "storekeeper"
             ? (row) => (
-                <button
-                  onClick={() => setRefillTarget(row)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-graphite-900/15 text-xs font-medium text-graphite-700 hover:border-amber hover:text-amber-dark ml-auto"
-                >
-                  <LuRefreshCcw size={13} /> Refill
-                </button>
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setActionModal({ mode: "refill", row })}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-graphite-900/15 text-xs font-medium text-graphite-700 hover:border-amber hover:text-amber-dark"
+                  >
+                    <LuRefreshCcw size={13} /> Refill
+                  </button>
+                  <button
+                    onClick={() => setActionModal({ mode: "reduce", row })}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-graphite-900/15 text-xs font-medium text-graphite-700 hover:border-rejected hover:text-rejected"
+                  >
+                    <LuMinus size={13} /> Reduce
+                  </button>
+                </div>
               )
             : undefined
         }
       />
 
-      {refillTarget && (
+      {actionModal && (
         <MaterialFormModal
-          mode="refill"
-          initialData={refillTarget}
-          onClose={() => setRefillTarget(null)}
-          onSubmit={handleRefillSubmit}
+          mode={actionModal.mode}
+          initialData={actionModal.row}
+          onClose={() => setActionModal(null)}
+          onSubmit={handleActionSubmit}
           submitting={submitting}
         />
       )}

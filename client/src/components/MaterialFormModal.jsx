@@ -5,11 +5,15 @@ const CATEGORIES = ["Chemical", "Packing Material", "Label"];
 const UNITS = ["kg", "g", "cm", "bundle", "cubes", "litres", "rolls", "boxes", "pieces"];
 
 /**
- * mode: "add" | "refill" | "reduce" | "edit"
+ * mode: "add" | "refill" | "reduce" | "edit" | "manager-edit"
  * initialData: material being edited, refilled, or reduced
  */
 const MaterialFormModal = ({ mode, initialData, onClose, onSubmit, submitting }) => {
-  const isLinked = mode === "refill" || mode === "reduce";
+  const isManagerEdit = mode === "manager-edit";
+  const isLinked = mode === "refill" || mode === "reduce" || isManagerEdit;
+  const isReduction = mode === "reduce" || (isManagerEdit && initialData?.requestType === "reduce");
+  const currentStock = isManagerEdit ? initialData?.refillTarget?.quantity : initialData?.quantity;
+  const currentStockUnit = isManagerEdit ? initialData?.refillTarget?.unitType : initialData?.unitType;
 
   const [form, setForm] = useState({
     name: initialData?.name || "",
@@ -35,6 +39,7 @@ const MaterialFormModal = ({ mode, initialData, onClose, onSubmit, submitting })
     refill: "Refill Material",
     reduce: "Reduce Material",
     edit: "Edit Pending Request",
+    "manager-edit": "Edit Stock Request",
   };
 
   const handleChange = (field, value) => setForm((f) => ({ ...f, [field]: value }));
@@ -47,8 +52,8 @@ const MaterialFormModal = ({ mode, initialData, onClose, onSubmit, submitting })
     if (!form.quantity || Number(form.quantity) <= 0)
       return setError("Quantity must be greater than zero");
 
-    if (mode === "reduce" && Number(form.quantity) > initialData.quantity) {
-      return setError(`Cannot reduce more than the current stock (${initialData.quantity} ${initialData.unitType})`);
+    if (isReduction && Number(form.quantity) > currentStock) {
+      return setError(`Cannot reduce more than the current stock (${currentStock} ${currentStockUnit})`);
     }
 
     const payload = {
@@ -57,6 +62,11 @@ const MaterialFormModal = ({ mode, initialData, onClose, onSubmit, submitting })
       category: form.category,
       unitType: form.unitType,
     };
+
+    if (isManagerEdit) {
+      onSubmit({ quantity: Number(form.quantity) });
+      return;
+    }
 
     if (isLinked) {
       payload.requestType = mode;
@@ -102,21 +112,21 @@ const MaterialFormModal = ({ mode, initialData, onClose, onSubmit, submitting })
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-mono uppercase tracking-widest text-graphite-600 mb-1.5">
-                {mode === "reduce" ? "Quantity to Reduce" : "Quantity"}
+                {isReduction ? "Quantity to Reduce" : isManagerEdit ? "Quantity to Refill" : "Quantity"}
               </label>
               <input
                 type="number"
                 min="1"
-                max={mode === "reduce" ? initialData.quantity : undefined}
+                max={isReduction ? currentStock : undefined}
                 step="any"
                 value={form.quantity}
                 onChange={(e) => handleChange("quantity", e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-graphite-900/15 rounded-md focus:border-amber outline-none font-mono"
                 placeholder="0"
               />
-              {mode === "reduce" && (
+              {isReduction && (
                 <p className="mt-1 text-xs text-graphite-600 font-mono">
-                  Current stock: {initialData.quantity} {initialData.unitType}
+                  Current stock: {currentStock} {currentStockUnit}
                 </p>
               )}
             </div>

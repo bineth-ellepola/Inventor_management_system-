@@ -53,6 +53,11 @@ export const getApprovalHistory = async (params = {}) => {
   return data;
 };
 
+export const updatePendingApprovalRequest = async (id, payload) => {
+  const { data } = await api.put(`/approvals/${id}`, payload);
+  return data;
+};
+
 export const approveRequest = async (id) => {
   const { data } = await api.put(`/approvals/${id}/approve`);
   return data;

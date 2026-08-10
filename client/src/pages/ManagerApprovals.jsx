@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
-import { LuCheck, LuX } from "react-icons/lu";
+import { LuCheck, LuPencil, LuX } from "react-icons/lu";
 import DashboardLayout from "../layouts/DashboardLayout";
 import MaterialTable from "../components/MaterialTable";
+import MaterialFormModal from "../components/MaterialFormModal";
 import {
   getPendingRequests,
   getApprovalHistory,
   approveRequest,
   rejectRequest,
+  updatePendingApprovalRequest,
 } from "../services/materialService";
 
 const ManagerApprovals = () => {
@@ -18,6 +20,7 @@ const ManagerApprovals = () => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState(null);
+  const [editingRequest, setEditingRequest] = useState(null);
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -57,6 +60,20 @@ const ManagerApprovals = () => {
       fetchData();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to reject request");
+    } finally {
+      setActingId(null);
+    }
+  };
+
+  const handleEditSubmit = async (payload) => {
+    setActingId(editingRequest._id);
+    try {
+      await updatePendingApprovalRequest(editingRequest._id, payload);
+      toast.success(`"${editingRequest.name}" request updated`);
+      setEditingRequest(null);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update request");
     } finally {
       setActingId(null);
     }
@@ -138,6 +155,15 @@ const ManagerApprovals = () => {
           tab === "pending"
             ? (row) => (
                 <div className="flex justify-end gap-2">
+                  {(row.requestType === "refill" || row.requestType === "reduce") && (
+                    <button
+                      onClick={() => setEditingRequest(row)}
+                      disabled={actingId === row._id}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-graphite-900/15 text-graphite-700 text-xs font-medium hover:border-amber hover:text-amber-dark disabled:opacity-50"
+                    >
+                      <LuPencil size={13} /> Edit
+                    </button>
+                  )}
                   <button
                     onClick={() => handleApprove(row)}
                     disabled={actingId === row._id}
@@ -157,6 +183,16 @@ const ManagerApprovals = () => {
             : undefined
         }
       />
+
+      {editingRequest && (
+        <MaterialFormModal
+          mode="manager-edit"
+          initialData={editingRequest}
+          onClose={() => setEditingRequest(null)}
+          onSubmit={handleEditSubmit}
+          submitting={actingId === editingRequest._id}
+        />
+      )}
     </DashboardLayout>
   );
 };

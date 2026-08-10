@@ -134,6 +134,49 @@ const approveRequest = async (req, res) => {
   }
 };
 
+// @desc    Update the quantity of a pending refill or reduction request
+// @route   PUT /api/approvals/:id
+// @access  Private (manager)
+const updatePendingRequest = async (req, res) => {
+  try {
+    const request = await Material.findById(req.params.id);
+
+    if (!request) return res.status(404).json({ message: "Request not found" });
+    if (request.status !== "Pending") {
+      return res.status(400).json({ message: "Only pending requests can be edited" });
+    }
+    if (!["refill", "reduce"].includes(request.requestType) || !request.refillTarget) {
+      return res.status(400).json({ message: "Only refill and reduction requests can be edited here" });
+    }
+
+    const quantity = Number(req.body.quantity);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      return res.status(400).json({ message: "Quantity must be greater than zero" });
+    }
+
+    const target = await Material.findById(request.refillTarget);
+    if (!target || target.status !== "Approved") {
+      return res.status(400).json({ message: "Target material was not found or is not an approved item" });
+    }
+    if (request.requestType === "reduce" && quantity > target.quantity) {
+      return res.status(400).json({
+        message: `Cannot reduce more than the current stock (${target.quantity} ${target.unitType})`,
+      });
+    }
+
+    request.quantity = quantity;
+    await request.save();
+    await request.populate([
+      { path: "createdBy", select: "name email" },
+      { path: "refillTarget", select: "name quantity unitType" },
+    ]);
+
+    res.json({ message: "Request quantity updated", request });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 // @desc    Reject a pending request
 // @route   PUT /api/approvals/:id/reject
 // @access  Private (manager)
@@ -164,6 +207,7 @@ const rejectRequest = async (req, res) => {
 module.exports = {
   getPendingRequests,
   getApprovalHistory,
+  updatePendingRequest,
   approveRequest,
   rejectRequest,
 };

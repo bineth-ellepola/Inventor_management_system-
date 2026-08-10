@@ -1,0 +1,15 @@
+# Dependencies and generated output
+node_modules/
+client/node_modules/
+server/node_modules/
+client/dist/
+
+# Local environment configuration and secrets
+.env
+.env.*
+!.env.example
+server/.env
+client/.env
+
+# Logs
+*.log

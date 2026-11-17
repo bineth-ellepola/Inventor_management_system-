@@ -33,6 +33,7 @@ inventory ledger.
 From the repo root, install everything and run both apps together with one command:
 
 ```bash
+npm install           # installs the root dev runner (concurrently)
 npm run install:all   # installs server + client dependencies
 npm run dev            # runs the API and the client concurrently
 ```

@@ -8,8 +8,6 @@ const authRoutes = require("./routes/authRoutes");
 const materialRoutes = require("./routes/materialRoutes");
 const approvalRoutes = require("./routes/approvalRoutes");
 
-connectDB();
-
 const app = express();
 
 app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" }));
@@ -37,6 +35,8 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5050;
 
-app.listen(PORT, () => {
-  console.log(`NIMS API running on port ${PORT}`);
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`NIMS API running on port ${PORT}`);
+  });
 });

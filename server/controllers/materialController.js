@@ -12,7 +12,7 @@ const buildFilter = (req, base = {}) => {
     filter.unitType = req.query.unitType;
   }
 
-  if (req.query.status) {
+  if (req.query.status && base.status === undefined) {
     filter.status = req.query.status;
   }
 

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const dns = require("node:dns");
 
 const connectDB = async () => {
   try {
@@ -8,6 +9,10 @@ const connectDB = async () => {
       throw new Error(
         "MONGO_URI is not defined. Copy .env.example to .env and set your connection string."
       );
+    }
+
+    if (process.env.DNS_SERVERS) {
+      dns.setServers(process.env.DNS_SERVERS.split(",").map((server) => server.trim()));
     }
 
     const conn = await mongoose.connect(uri);

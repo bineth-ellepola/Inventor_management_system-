@@ -56,4 +56,25 @@ const getStockHistory = async (req, res) => {
   }
 };
 
-module.exports = { getStockHistory };
+const getMonthlyStockReport = async (req, res) => {
+  const { monthRange, createMonthlyStockPdf } = require("../utils/monthlyStockReport");
+  const range = monthRange(req.query.month);
+  if (!range) return res.status(400).json({ message: "Select a valid report month (YYYY-MM)" });
+  try {
+    // Fetch the entire month, independent of the history table's pagination/filters.
+    const items = await Material.find({
+      status: "Approved",
+      requestType: { $in: ["refill", "reduce"] },
+      approvedAt: { $gte: range.start, $lt: range.end },
+    }).sort({ approvedAt: 1, _id: 1 }).populate("createdBy", "name").populate("approvedBy", "name").lean();
+    const pdf = await createMonthlyStockPdf(req.query.month, items);
+    res.set("Content-Type", "application/pdf");
+    res.set("Content-Disposition", `attachment; filename="stock-report-${req.query.month}.pdf"`);
+    res.set("Cache-Control", "no-store");
+    res.send(pdf);
+  } catch (error) {
+    res.status(500).json({ message: "Unable to generate monthly stock report" });
+  }
+};
+
+module.exports = { getStockHistory, getMonthlyStockReport };

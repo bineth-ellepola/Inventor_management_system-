@@ -24,6 +24,11 @@ inventory ledger.
   Open **Stock History** in the manager sidebar or **View history** on an inventory item.
   Existing approved refill/reduction records appear automatically; pending/rejected
   requests and initial stock creation are excluded. Dates use Asia/Colombo time.
+- Monthly PDF downloads: in **Stock History**, select a report month and click
+  **Download PDF**. The manager-only report includes all approved refill/reduction
+  movements that month, per-material increase/reduction/net totals, timestamps,
+  requester and approver. It covers the full month regardless of table filters or
+  pagination. Empty months produce a report stating that no changes were recorded.
 - Design: an industrial "manifest/ledger" look — graphite sidebar, amber accent,
   and a stamp-style status badge (Pending / Approved / Rejected) that echoes a
   real paper requisition stamp.
@@ -141,6 +146,7 @@ Then log in through the app at `http://localhost:5173/login` with either account
 | GET | /api/materials | Private | Approved inventory (search/category/pagination) |
 | GET | /api/materials/mine | Store Keeper | My requests (any status) |
 | GET | /api/materials/history | Manager | Stock movements; filters: search, category, materialId, direction (refill/reduce), from/to (YYYY-MM-DD), page, limit |
+| GET | /api/materials/reports/monthly?month=YYYY-MM | Manager | Download monthly stock changes as PDF (Sri Lanka calendar month) |
 | GET | /api/materials/:id | Private | Single material |
 | POST | /api/materials | Store Keeper | Submit new/refill request |
 | PUT | /api/materials/:id | Store Keeper | Edit own pending request |

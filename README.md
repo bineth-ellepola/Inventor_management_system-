@@ -19,6 +19,11 @@ inventory ledger.
 - Store Keeper dashboard (stat cards) + "My Requests" (add / edit / delete pending, refill)
 - Manager dashboard (stat cards) + Approvals (approve / reject, history tab)
 - Shared Inventory page (search, filter, pagination)
+- Manager-only Stock History with increases/reductions, approval date and time,
+  signed quantities, requester and approver, material/category/date filters and pagination.
+  Open **Stock History** in the manager sidebar or **View history** on an inventory item.
+  Existing approved refill/reduction records appear automatically; pending/rejected
+  requests and initial stock creation are excluded. Dates use Asia/Colombo time.
 - Design: an industrial "manifest/ledger" look — graphite sidebar, amber accent,
   and a stamp-style status badge (Pending / Approved / Rejected) that echoes a
   real paper requisition stamp.
@@ -84,7 +89,11 @@ npm install
 cp .env.example .env
 ```
 
-By default `.env` points at `http://localhost:5050/api` — change it if your backend runs elsewhere.
+By default the frontend uses `/api` through the Vite development/preview proxy.
+Set `API_PROXY_TARGET` in `client/.env` if the backend runs somewhere other than
+`http://localhost:5050`. This also works when Vite selects another frontend port.
+For production, configure a reverse proxy for `/api`, or set `VITE_API_URL` to
+the deployed API and allow the frontend origin in `CLIENT_URL`.
 
 Run it:
 ```bash
@@ -131,6 +140,7 @@ Then log in through the app at `http://localhost:5173/login` with either account
 | GET | /api/auth/profile | Private | Current user profile |
 | GET | /api/materials | Private | Approved inventory (search/category/pagination) |
 | GET | /api/materials/mine | Store Keeper | My requests (any status) |
+| GET | /api/materials/history | Manager | Stock movements; filters: search, category, materialId, direction (refill/reduce), from/to (YYYY-MM-DD), page, limit |
 | GET | /api/materials/:id | Private | Single material |
 | POST | /api/materials | Store Keeper | Submit new/refill request |
 | PUT | /api/materials/:id | Store Keeper | Edit own pending request |

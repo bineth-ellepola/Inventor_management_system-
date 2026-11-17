@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
+import { Link } from "react-router-dom";
 import { LuRefreshCcw, LuMinus } from "react-icons/lu";
 import DashboardLayout from "../layouts/DashboardLayout";
 import MaterialTable from "../components/MaterialTable";
@@ -106,7 +107,9 @@ const InventoryPage = () => {
                   </button>
                 </div>
               )
-            : undefined
+            : user?.role === "manager" ? (row) => (
+                <Link className="text-sm underline" to={`/manager/stock-history?materialId=${row._id}`}>View history</Link>
+              ) : undefined
         }
       />
 

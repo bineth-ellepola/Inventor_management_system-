@@ -11,10 +11,12 @@ const {
 } = require("../controllers/materialController");
 const { protect } = require("../middleware/authMiddleware");
 const { authorize } = require("../middleware/roleMiddleware");
+const { getStockHistory } = require("../controllers/stockHistoryController");
 
 const router = express.Router();
 
 router.use(protect);
+router.get("/history", authorize("manager"), getStockHistory);
 
 router.get("/stats/storekeeper", authorize("storekeeper"), getStoreKeeperStats);
 router.get("/stats/manager", authorize("manager"), getManagerStats);

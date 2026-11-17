@@ -18,7 +18,14 @@ const LoginPage = () => {
       toast.success(`Welcome back, ${profile.name}`);
       navigate(profile.role === "manager" ? "/manager" : "/storekeeper");
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed. Check your credentials.");
+      setError(
+        err.response?.data?.message ||
+        (!err.response
+          ? "Cannot connect to the server. Please try again shortly."
+          : err.response.status >= 500
+            ? "The sign-in service is unavailable. Please try again shortly."
+            : "Unable to sign in. Please try again.")
+      );
     }
   };
 

@@ -12,6 +12,7 @@ import StoreKeeperRequests from "./pages/StoreKeeperRequests";
 import ManagerDashboard from "./pages/ManagerDashboard";
 import ManagerApprovals from "./pages/ManagerApprovals";
 import InventoryPage from "./pages/InventoryPage";
+import StockHistory from "./pages/StockHistory";
 
 function App() {
   const { user } = useAuth();
@@ -19,6 +20,10 @@ function App() {
   return (
     <>
       <Routes>
+        <Route
+          path="/manager/stock-history"
+          element={<ProtectedRoute allowedRoles={["manager"]}><StockHistory /></ProtectedRoute>}
+        />
         <Route
           path="/login"
           element={

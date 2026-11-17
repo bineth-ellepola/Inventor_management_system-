@@ -27,6 +27,7 @@ const DashboardLayout = ({ children, title, subtitle }) => {
   const managerLinks = [
     { to: "/manager", label: "Dashboard", icon: LuLayoutDashboard, end: true },
     { to: "/manager/approvals", label: "Approvals", icon: LuClipboardCheck },
+    { to: "/manager/stock-history", label: "Stock History", icon: LuClipboardCheck },
     { to: "/inventory", label: "Inventory", icon: LuBoxes },
   ];
 

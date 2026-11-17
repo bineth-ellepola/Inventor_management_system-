@@ -1,5 +1,10 @@
 import api from "./api";
 
+export const getStockHistory = async (params = {}) => {
+  const { data } = await api.get("/materials/history", { params });
+  return data;
+};
+
 // Inventory (approved items) — visible to both roles
 export const getInventory = async (params = {}) => {
   const { data } = await api.get("/materials", { params });

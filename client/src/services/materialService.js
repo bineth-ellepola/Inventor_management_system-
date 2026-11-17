@@ -1,5 +1,27 @@
 import api from "./api";
 
+export const downloadMonthlyStockReport = async (month) => {
+  try {
+    const { data } = await api.get("/materials/reports/monthly", {
+      params: { month }, responseType: "blob", timeout: 120000,
+    });
+    const url = URL.createObjectURL(data);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `stock-report-${month}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  } catch (error) {
+    let message = "Unable to download the report. Please try again.";
+    if (error.response?.data instanceof Blob) {
+      try { message = JSON.parse(await error.response.data.text()).message || message; } catch { /* Non-JSON server response */ }
+    }
+    throw new Error(message);
+  }
+};
+
 export const getStockHistory = async (params = {}) => {
   const { data } = await api.get("/materials/history", { params });
   return data;
